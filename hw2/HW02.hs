@@ -43,17 +43,21 @@ matches a b = sum (zipWith min (countColors a) (countColors b))
 
 -- Construct a Move from a guess given the actual code
 getMove :: Code -> Code -> Move
-getMove = undefined
+getMove s g = Move g exact nonexact
+                where
+                exact = exactMatches s g
+                nonexact = matches s g - exact
 
 -- Exercise 4 -----------------------------------------
 
 isConsistent :: Move -> Code -> Bool
-isConsistent = undefined
+isConsistent (Move g ex nex) code =
+    (Move g ex nex) == getMove code g
 
 -- Exercise 5 -----------------------------------------
 
 filterCodes :: Move -> [Code] -> [Code]
-filterCodes = undefined
+filterCodes move codes = filter (isConsistent move) codes
 
 -- Exercise 6 -----------------------------------------
 
