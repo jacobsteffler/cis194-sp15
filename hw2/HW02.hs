@@ -1,6 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
 module HW02 where
 
+import Data.List
+
 -- Mastermind -----------------------------------------
 
 -- A peg can be one of six colors
@@ -62,12 +64,38 @@ filterCodes move codes = filter (isConsistent move) codes
 -- Exercise 6 -----------------------------------------
 
 allCodes :: Int -> [Code]
-allCodes = undefined
+allCodes n
+    | n <= 0 = []
+    | n == 1 = group colors
+    | otherwise = nub (concatMap addColors (allCodes (n-1)))
+
+addColors :: Code -> [Code]
+addColors c = concatMap ($ c) (map addColor colors)
+
+addColor :: Peg -> Code -> [Code]
+addColor p c = addColorLoc p 0 c
+
+addColorLoc :: Peg -> Int -> Code -> [Code]
+addColorLoc p n c
+    | n == (length c) = [c ++ [p]]
+    | otherwise = [(take n c) ++ [p] ++ (drop n c)] ++ (addColorLoc p (n+1) c)
 
 -- Exercise 7 -----------------------------------------
 
 solve :: Code -> [Move]
-solve = undefined
+solve s = solveConsistent s (allCodes (length s))
+
+solveConsistent :: Code -> [Code] -> [Move]
+solveConsistent _ [] = []
+solveConsistent s (c:cs) = [thisMove] ++ nextMoves
+    where
+    thisMove = getMove s c
+    nextMoves = if (moveExact thisMove) == (length s)
+                then []
+                else solveConsistent s (filterCodes thisMove cs)
+
+moveExact :: Move -> Int
+moveExact (Move _ ex _) = ex
 
 -- Bonus ----------------------------------------------
 
