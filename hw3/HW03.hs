@@ -37,7 +37,7 @@ extend :: State -> String -> Int -> State
 extend st name val = newState
     where
         newState :: State
-        newState a | a == name = val | otherwise = st name
+        newState a | a == name = val | otherwise = st a
 
 empty :: State
 empty _ = 0
@@ -48,15 +48,15 @@ evalE :: State -> Expression -> Int
 evalE st (Var str) = st str
 evalE _ (Val int) = int
 evalE st (Op ex1 bop ex2) = case bop of
-    Plus -> lhs + rhs
-    Minus -> lhs - rhs
-    Times -> lhs * rhs
-    Divide -> div lhs rhs
-    Gt -> if (lhs > rhs) then 1 else 0
-    Ge -> if (lhs >= rhs) then 1 else 0
-    Lt -> if (lhs < rhs) then 1 else 0
-    Le -> if (lhs <= rhs) then 1 else 0
-    Eql -> if (lhs == rhs) then 1 else 0
+    Plus    ->  lhs + rhs
+    Minus   ->  lhs - rhs
+    Times   ->  lhs * rhs
+    Divide  ->  div lhs rhs
+    Gt      ->  if (lhs > rhs)  then 1 else 0
+    Ge      ->  if (lhs >= rhs) then 1 else 0
+    Lt      ->  if (lhs < rhs)  then 1 else 0
+    Le      ->  if (lhs <= rhs) then 1 else 0
+    Eql     ->  if (lhs == rhs) then 1 else 0
     where
         lhs = evalE st ex1
         rhs = evalE st ex2
@@ -72,21 +72,32 @@ data DietStatement = DAssign String Expression
 
 desugar :: Statement -> DietStatement
 desugar s = case s of
-    (Assign str ex) -> DAssign str ex
-    (Incr str) -> DAssign str (Op (Var str) Plus (Val 1))
-    (If ex s1 s2) -> DIf ex (desugar s1) (desugar s2)
-    (While ex s1) -> DWhile ex (desugar s1)
-    (For s1 ex s2 s3) -> undefined
-    (Sequence s1 s2) -> DSequence (desugar s1) (desugar s2)
-    Skip -> DSkip
+    (Assign str ex)     -> DAssign str ex
+    (Incr str)          -> DAssign str (Op (Var str) Plus (Val 1))
+    (If ex s1 s2)       -> DIf ex (desugar s1) (desugar s2)
+    (While ex s1)       -> DWhile ex (desugar s1)
+    (For s1 ex s2 s3)   -> DSequence (desugar s1)
+                            (DWhile ex
+                            (DSequence (desugar s3) (desugar s2)))
+    (Sequence s1 s2)    -> DSequence (desugar s1) (desugar s2)
+    Skip                -> DSkip
 
 -- Exercise 4 -----------------------------------------
 
 evalSimple :: State -> DietStatement -> State
-evalSimple = undefined
+evalSimple st ds = case ds of
+    (DAssign str ex) -> extend st str (evalE st ex)
+    (DIf ex tr fa) -> if (evalE st ex) /= 0
+                        then evalSimple st tr
+                        else evalSimple st fa
+    wh@(DWhile ex lo) -> if (evalE st ex) /= 0
+                            then evalSimple st (DSequence lo wh)
+                            else st
+    (DSequence s1 s2) -> evalSimple (evalSimple st s1) s2
+    DSkip -> st
 
 run :: State -> Statement -> State
-run = undefined
+run st s = evalSimple st (desugar s)
 
 -- Programs -------------------------------------------
 
