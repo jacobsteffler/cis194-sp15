@@ -86,15 +86,15 @@ desugar s = case s of
 
 evalSimple :: State -> DietStatement -> State
 evalSimple st ds = case ds of
-    (DAssign str ex) -> extend st str (evalE st ex)
-    (DIf ex tr fa) -> if (evalE st ex) /= 0
-                        then evalSimple st tr
-                        else evalSimple st fa
-    wh@(DWhile ex lo) -> if (evalE st ex) /= 0
+    (DAssign str ex)    -> extend st str (evalE st ex)
+    (DIf ex tr fa)      -> if (evalE st ex) /= 0
+                            then evalSimple st tr
+                            else evalSimple st fa
+    wh@(DWhile ex lo)   -> if (evalE st ex) /= 0
                             then evalSimple st (DSequence lo wh)
                             else st
-    (DSequence s1 s2) -> evalSimple (evalSimple st s1) s2
-    DSkip -> st
+    (DSequence s1 s2)   -> evalSimple (evalSimple st s1) s2
+    DSkip               -> st
 
 run :: State -> Statement -> State
 run st s = evalSimple st (desugar s)
