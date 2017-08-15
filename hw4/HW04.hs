@@ -20,7 +20,7 @@ instance (Num a, Eq a) => Eq (Poly a) where
             l2 = length c2
             tailZero n cs =
                 null $ filter (/= 0) (drop n cs)
- 
+
 -- Exercise 3 -----------------------------------------
 
 instance (Num a, Eq a, Show a) => Show (Poly a) where
