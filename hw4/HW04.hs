@@ -18,20 +18,47 @@ instance (Num a, Eq a) => Eq (Poly a) where
         where
             l1 = length c1
             l2 = length c2
-            tailZero n cs =
-                null $ filter (/= 0) (drop n cs)
+            tailZero n cs = allNum 0 (drop n cs)
+
+allNum :: (Eq a, Num a) => a -> [a] -> Bool
+allNum _ [] = False
+allNum n cs = null $ filter (/= n) cs
 
 -- Exercise 3 -----------------------------------------
 
 instance (Num a, Eq a, Show a) => Show (Poly a) where
-    show (P coeffs) = case coeffs of
-        []      -> "0"
-        (c:[])  -> show c
+    show (P coeffs) = showPoly $ reverse coeffs
+
+showPoly :: (Num a, Eq a, Show a) => [a] -> String
+showPoly [] = "0"
+showPoly (c:[]) = show c
+showPoly (c:cs) = showSingle c (length cs) ++ term
+    where term = if c == 0
+                    then showPoly cs
+                    else if allNum 0 cs
+                    then ""
+                    else " + " ++ showPoly cs
+
+showSingle :: (Num a, Eq a, Show a) => a -> Int -> String
+showSingle c p = if c == 0 then "" else case p of
+    0 -> show c
+    1 -> showCo ++ "x"
+    _ -> showCo ++ "x^" ++ show p
+    where showCo = if c == 1 then "" else show c
 
 -- Exercise 4 -----------------------------------------
 
 plus :: Num a => Poly a -> Poly a -> Poly a
-plus = undefined
+plus (P a) (P b) = P (zipWith (+) ex1 ex2)
+    where
+    ex1 = extend 0 maxLen a
+    ex2 = extend 0 maxLen b
+    maxLen = max (length a) (length b)
+
+extend :: Num a => a -> Int -> [a] -> [a]
+extend val len cs = cs ++ take extra (repeat val)
+    where extra = if len <= length cs
+                    then 0 else len - length cs
 
 -- Exercise 5 -----------------------------------------
 
@@ -44,7 +71,7 @@ instance Num a => Num (Poly a) where
     (+) = plus
     (*) = times
     negate      = undefined
-    fromInteger = undefined
+    fromInteger n = P [fromInteger n]
     -- No meaningful definitions exist
     abs    = undefined
     signum = undefined
