@@ -44,7 +44,10 @@ showSingle c p = if c == 0 then "" else case p of
     0 -> show c
     1 -> showCo ++ "x"
     _ -> showCo ++ "x^" ++ show p
-    where showCo = if c == 1 then "" else show c
+    where showCo = if c == 1
+                    then "" else
+                    if c == (-1) then "-"
+                    else show c
 
 -- Exercise 4 -----------------------------------------
 
@@ -63,14 +66,21 @@ extend val len cs = cs ++ take extra (repeat val)
 -- Exercise 5 -----------------------------------------
 
 times :: Num a => Poly a -> Poly a -> Poly a
-times = undefined
+times pa pb = sum $ shiftMult pa pb
+
+shiftMult :: Num a => Poly a -> Poly a -> [Poly a]
+shiftMult (P []) (P _) = [P []]
+shiftMult (P _) (P []) = [P []]
+shiftMult (P (c:cs)) (P cfs) =
+    (P newCo) : shiftMult (P cs) (P (0 : cfs))
+    where newCo = map (* c) cfs
 
 -- Exercise 6 -----------------------------------------
 
 instance Num a => Num (Poly a) where
     (+) = plus
     (*) = times
-    negate      = undefined
+    negate (P cs) = P (map (* (-1)) cs)
     fromInteger n = P [fromInteger n]
     -- No meaningful definitions exist
     abs    = undefined
@@ -79,17 +89,23 @@ instance Num a => Num (Poly a) where
 -- Exercise 7 -----------------------------------------
 
 applyP :: Num a => Poly a -> a -> a
-applyP = undefined
+applyP (P cs) n = sum $ zipWith (*) cs powers
+    where
+        powers = map (n^) (take (length cs) count)
+        count = [0, 1..] :: [Int]
 
 -- Exercise 8 -----------------------------------------
 
 class Num a => Differentiable a where
     deriv  :: a -> a
     nderiv :: Int -> a -> a
-    nderiv = undefined
+    nderiv n d = iterate deriv d !! n
 
 -- Exercise 9 -----------------------------------------
 
 instance Num a => Differentiable (Poly a) where
-    deriv = undefined
-
+    deriv (P []) = P []
+    deriv (P cs) = P (tail (zipWith (*) mult cs))
+        where
+            mult = take (length cs) count
+            count = iterate (+1) 0
